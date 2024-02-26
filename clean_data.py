@@ -5,8 +5,9 @@ import pandas as pd
 
 def load_data(input_file):
     """Lea el archivo usando pandas y devuelva un DataFrame"""
-    data = pd.read_csv(input_file,sep="\t")
-    return data
+
+    df = pd.read_csv(input_file)
+    return df
 
 
 def create_key(df, n):
@@ -16,30 +17,36 @@ def create_key(df, n):
 
     # Copie la columna 'text' a la columna 'key'
     df["key"] = df["text"]
+
     # Remueva los espacios en blanco al principio y al final de la cadena
+    df["key"] = df["key"].str.strip()
+
     # Convierta el texto a minúsculas
+    df["key"] = df["key"].str.lower()
+
     # Transforme palabras que pueden (o no) contener guiones por su version sin guion.
+    df["key"] = df["key"].str.replace("-", "")
+
     # Remueva puntuación y caracteres de control
-    # Convierta el texto a una lista de tokens
-    # Una el texto sin espacios en blanco
-    # Convierta el texto a una lista de n-gramas
-    # Ordene la lista de n-gramas y remueve duplicados
-    # Convierta la lista de ngramas a una cadena
-    df["key"] = (
-        df["key"]
-        .str.strip()
-        .str.lower()
-        .str.replace("-", "")
-        .str.replace(".", "")
-        .str.translate(
-           str.maketrans("", "", "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
-        )
-        .str.split()
-        .str.join("")
-        .apply(lambda x: [x[i:i+n] for i in range(len(x) - n + 1)])
-        .apply(lambda x: "".join(sorted(set(x))))    
+    df["key"] = df["key"].str.translate(
+    str.maketrans("", "", "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
     )
-    
+
+    # Convierta el texto a una lista de tokens
+    df["key"] = df["key"].str.split()
+
+    # Una el texto sin espacios en blanco
+    df["key"] = df["key"].str.join("")
+
+    # Convierta el texto a una lista de n-gramas
+    df["key"] = df["key"].map(lambda x: [x[t:t+n-1] for t in range(len(x))])
+
+    # Ordene la lista de n-gramas y remueve duplicados
+    df["key"] = df["key"].apply(lambda x: sorted(set(x)))
+
+    # Convierta la lista de ngramas a una cadena
+    df["key"] = df["key"].str.join("")
+
     return df
 
 
@@ -49,13 +56,16 @@ def generate_cleaned_column(df):
     df = df.copy()
 
     # Ordene el dataframe por 'key' y 'text'
-    df = df.sort_values(by=["key", "text"])
+    df = df.sort_values(by=["key", "text"], ascending=[True, True])
+
     # Seleccione la primera fila de cada grupo de 'key'
-    keys = df.groupby("key").first().reset_index()
+    keys = df.drop_duplicates(subset="key", keep="first")
+
     # Cree un diccionario con 'key' como clave y 'text' como valor
-    keys = keys.set_index("key")["text"].to_dict()
+    key_dict = dict(zip(keys["key"], keys["text"]))
+
     # Cree la columna 'cleaned' usando el diccionario
-    df["cleaned"] = df["key"].map(keys)
+    df["cleaned"] = df["key"].map(key_dict)
 
     return df
 
