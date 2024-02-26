@@ -31,6 +31,9 @@ def create_key(df, n):
         .str.lower()
         .str.replace("-", "")
         .str.replace(".", "")
+        .str.translate(
+           str.maketrans("", "", "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+        )
         .str.split()
         .str.join("")
         .apply(lambda x: [x[i:i+n] for i in range(len(x) - n + 1)])
