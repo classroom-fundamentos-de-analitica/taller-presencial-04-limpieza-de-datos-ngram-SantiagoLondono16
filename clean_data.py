@@ -29,7 +29,7 @@ def create_key(df, n):
 
     # Remueva puntuación y caracteres de control
     df["key"] = df["key"].str.translate(
-    str.maketrans("", "", "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+        str.maketrans("", "", "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
     )
 
     # Convierta el texto a una lista de tokens
@@ -37,7 +37,7 @@ def create_key(df, n):
 
     # Una el texto sin espacios en blanco
     df["key"] = df["key"].str.join("")
-
+   
     # Convierta el texto a una lista de n-gramas
     df["key"] = df["key"].map(lambda x: [x[t:t+n-1] for t in range(len(x))])
 
